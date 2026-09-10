@@ -1,88 +1,145 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Генератор доверенности</title>
-  <!-- Подключаем Telegram SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
+    * { box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 12px;
       margin: 0;
-      background-color: var(--tg-theme-bg-color, #ffffff);
-      color: var(--tg-theme-text-color, #000000);
+      background-color: var(--tg-theme-secondary-bg-color, #f0f2f5);
+      color: var(--tg-theme-text-color, #222);
     }
-    .form-group {
+    .card {
+      background: var(--tg-theme-bg-color, #ffffff);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--tg-theme-link-color, #2481cc);
       margin-bottom: 12px;
     }
+    .form-group { margin-bottom: 12px; }
+    .form-group:last-child { margin-bottom: 0; }
     label {
       display: block;
-      margin-bottom: 4px;
-      font-size: 14px;
-      color: var(--tg-theme-hint-color, #888888);
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--tg-theme-hint-color, #666);
     }
-    input {
+    input, select {
       width: 100%;
-      padding: 10px;
-      box-sizing: border-box;
-      border: 1px solid #ccc;
+      padding: 10px 12px;
+      font-size: 15px;
+      border: 1px solid #ddd;
       border-radius: 8px;
-      background-color: var(--tg-theme-secondary-bg-color, #f4f4f5);
-      color: var(--tg-theme-text-color, #000000);
+      background-color: var(--tg-theme-bg-color, #fff);
+      color: var(--tg-theme-text-color, #000);
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: var(--tg-theme-button-color, #2481cc);
     }
     button {
       width: 100%;
-      padding: 12px;
-      margin-top: 16px;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 600;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       background-color: var(--tg-theme-button-color, #2481cc);
       color: var(--tg-theme-button-text-color, #ffffff);
-      font-weight: bold;
       cursor: pointer;
+      margin-top: 8px;
     }
+    button:active { opacity: 0.9; }
   </style>
 </head>
 <body>
-  <h2>Форма доверенности</h2>
-  
-  <div class="form-group">
-    <label for="principal">ФИО Доверителя:</label>
-    <input type="text" id="principal" placeholder="Иванов Иван Иванович">
+
+  <!-- Блок 1. Реквизиты документа -->
+  <div class="card">
+    <div class="card-title">1. Документ</div>
+    <div class="form-group">
+      <label>Номер доверенности</label>
+      <input type="text" id="number" placeholder="Например: 09/09">
+    </div>
+    <div class="form-group">
+      <label>Дата прописью</label>
+      <input type="text" id="date_words" placeholder="Девятого сентября две тысячи двадцать шестого года">
+    </div>
   </div>
 
-  <div class="form-group">
-    <label for="agent">ФИО Поверенного:</label>
-    <input type="text" id="agent" placeholder="Петров Петр Петрович">
+  <!-- Блок 2. Компания (Доверитель) -->
+  <div class="card">
+    <div class="card-title">2. Компания (Доверитель)</div>
+    <div class="form-group">
+      <label>Название ТОО (без «ТОО»)</label>
+      <input type="text" id="org_name" placeholder="Jana Alatay">
+    </div>
+    <div class="form-group">
+      <label>БИН компании</label>
+      <input type="number" id="bin" placeholder="260640009225">
+    </div>
+    <div class="form-group">
+      <label>ФИО Директора полностью</label>
+      <input type="text" id="director_name" placeholder="Шакиров Искандер Билялович">
+    </div>
   </div>
 
-  <div class="form-group">
-    <label for="date">Дата выдачи:</label>
-    <input type="date" id="date">
+  <!-- Блок 3. Кому выдается (Поверенный) -->
+  <div class="card">
+    <div class="card-title">3. Поверенный</div>
+    <div class="form-group">
+      <label>ФИО Поверенного полностью</label>
+      <input type="text" id="agent_name" placeholder="Жумаев Камал Арзиманович">
+    </div>
+    <div class="form-group">
+      <label>ИИН Поверенного</label>
+      <input type="number" id="agent_iin" placeholder="041228500845">
+    </div>
   </div>
 
-  <button onclick="sendData()">Сгенерировать</button>
+  <button onclick="sendData()">Сгенерировать доверенность</button>
 
   <script>
     const tg = window.Telegram.WebApp;
-    tg.expand(); // Разворачиваем окно на весь экран
+    tg.expand();
 
     function sendData() {
-      const principal = document.getElementById('principal').value;
-      const agent = document.getElementById('agent').value;
-      const date = document.getElementById('date').value;
+      const payload = {
+        number: document.getElementById('number').value.trim(),
+        date_words: document.getElementById('date_words').value.trim(),
+        org_name: document.getElementById('org_name').value.trim(),
+        bin: document.getElementById('bin').value.trim(),
+        director_name: document.getElementById('director_name').value.trim(),
+        agent_name: document.getElementById('agent_name').value.trim(),
+        agent_iin: document.getElementById('agent_iin').value.trim()
+      };
 
-      if (!principal || !agent || !date) {
-        alert('Заполните все поля!');
-        return;
+      for (let key in payload) {
+        if (!payload[key]) {
+          alert('Пожалуйста, заполните все поля!');
+          return;
+        }
       }
 
-      const payload = { principal, agent, date };
-
-      // Отправляем данные боту и закрываем Web App
       tg.sendData(JSON.stringify(payload));
+      tg.close();
     }
   </script>
 </body>
