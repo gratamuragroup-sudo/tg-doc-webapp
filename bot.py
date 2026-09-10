@@ -32,13 +32,15 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         logging.info(f"Получены данные из WebApp: {raw_data}")
         data = json.loads(raw_data)
         
-        await update.message.reply_text("⏳ Данные получены! Формируем документ...")
+        # Показываем пользователю, что бот уже прикрепляет документ
+        await update.message.reply_chat_action("upload_document")
 
         template_path = "template.docx"
         if not os.path.exists(template_path):
-            await update.message.reply_text("❌ Ошибка: файл 'template.docx' не найден в папке с ботом!")
+            await update.message.reply_text("❌ Ошибка: файл 'template.docx' не найден!")
             return
 
+        # Рендеринг в памяти
         doc = DocxTemplate(template_path)
         doc.render(data)
         
@@ -47,6 +49,7 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         output_filename = f"Доверенность_{doc_num}.docx"
         doc.save(output_filename)
         
+        # Отправка готового файла
         with open(output_filename, 'rb') as document_file:
             await update.message.reply_document(
                 document=document_file,
