@@ -114,33 +114,88 @@
     </div>
   </div>
 
-  <button onclick="sendData()">Сгенерировать доверенность</button>
-
   <script>
     const tg = window.Telegram.WebApp;
+    const STORAGE_KEY = 'power_of_attorney_form';
+    const fields = ['number', 'date_words', 'org_name', 'bin', 'director_name', 'agent_name', 'agent_iin'];
+
+    tg.ready();
     tg.expand();
 
-    function sendData() {
-      const payload = {
-        number: document.getElementById('number').value.trim(),
-        date_words: document.getElementById('date_words').value.trim(),
-        org_name: document.getElementById('org_name').value.trim(),
-        bin: document.getElementById('bin').value.trim(),
-        director_name: document.getElementById('director_name').value.trim(),
-        agent_name: document.getElementById('agent_name').value.trim(),
-        agent_iin: document.getElementById('agent_iin').value.trim()
-      };
+    function getPayload() {
+      const payload = {};
+      for (const id of fields) {
+        payload[id] = document.getElementById(id).value.trim();
+      }
+      return payload;
+    }
 
-      for (let key in payload) {
-        if (!payload[key]) {
-          alert('Пожалуйста, заполните все поля!');
-          return;
+    function isFormValid() {
+      const payload = getPayload();
+      return fields.every(key => payload[key]);
+    }
+
+    function saveForm() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(getPayload()));
+      } catch (e) {
+        console.warn('Не удалось сохранить данные:', e);
+      }
+    }
+
+    function loadForm() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return;
+        const data = JSON.parse(saved);
+        for (const id of fields) {
+          if (data[id]) document.getElementById(id).value = data[id];
         }
+      } catch (e) {
+        console.warn('Не удалось загрузить данные:', e);
+      }
+    }
+
+    function updateMainButton() {
+      if (isFormValid()) {
+        tg.MainButton.setText('Сгенерировать доверенность');
+        tg.MainButton.enable();
+      } else {
+        tg.MainButton.setText('Заполните все поля');
+        tg.MainButton.disable();
+      }
+    }
+
+    function sendData() {
+      if (!isFormValid()) {
+        tg.showAlert('Пожалуйста, заполните все поля!');
+        return;
       }
 
+      const payload = getPayload();
+      saveForm();
+
+      tg.MainButton.showProgress(true);
+
       tg.sendData(JSON.stringify(payload));
-      tg.close();
+
+      setTimeout(() => tg.close(), 300);
     }
+
+    for (const id of fields) {
+      const el = document.getElementById(id);
+      el.addEventListener('input', () => {
+        saveForm();
+        updateMainButton();
+      });
+    }
+
+    tg.MainButton.setParams({ color: tg.themeParams.button_color, text_color: tg.themeParams.button_text_color });
+    tg.MainButton.onClick(sendData);
+    tg.MainButton.show();
+
+    loadForm();
+    updateMainButton();
   </script>
 </body>
 </html>
