@@ -41,7 +41,7 @@
       font-weight: 500;
       color: var(--tg-theme-hint-color, #666);
     }
-    input, select {
+    input {
       width: 100%;
       padding: 10px 12px;
       font-size: 15px;
@@ -51,10 +51,10 @@
       color: var(--tg-theme-text-color, #000);
       outline: none;
     }
-    input:focus, select:focus {
+    input:focus {
       border-color: var(--tg-theme-button-color, #2481cc);
     }
-    button {
+    .submit-btn {
       width: 100%;
       padding: 14px;
       font-size: 16px;
@@ -66,12 +66,11 @@
       cursor: pointer;
       margin-top: 8px;
     }
-    button:active { opacity: 0.9; }
+    .submit-btn:active { opacity: 0.9; }
   </style>
 </head>
 <body>
 
-  <!-- Блок 1. Реквизиты документа -->
   <div class="card">
     <div class="card-title">1. Документ</div>
     <div class="form-group">
@@ -84,7 +83,6 @@
     </div>
   </div>
 
-  <!-- Блок 2. Компания (Доверитель) -->
   <div class="card">
     <div class="card-title">2. Компания (Доверитель)</div>
     <div class="form-group">
@@ -101,7 +99,6 @@
     </div>
   </div>
 
-  <!-- Блок 3. Кому выдается (Поверенный) -->
   <div class="card">
     <div class="card-title">3. Поверенный</div>
     <div class="form-group">
@@ -114,9 +111,11 @@
     </div>
   </div>
 
+  <button class="submit-btn" onclick="sendData()">Сгенерировать доверенность</button>
+
   <script>
     const tg = window.Telegram.WebApp;
-    const STORAGE_KEY = 'power_of_attorney_form';
+    const STORAGE_KEY = 'poa_form_data_v1';
     const fields = ['number', 'date_words', 'org_name', 'bin', 'director_name', 'agent_name', 'agent_iin'];
 
     tg.ready();
@@ -130,16 +129,11 @@
       return payload;
     }
 
-    function isFormValid() {
-      const payload = getPayload();
-      return fields.every(key => payload[key]);
-    }
-
     function saveForm() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(getPayload()));
       } catch (e) {
-        console.warn('Не удалось сохранить данные:', e);
+        console.warn('Ошибка сохранения:', e);
       }
     }
 
@@ -152,50 +146,30 @@
           if (data[id]) document.getElementById(id).value = data[id];
         }
       } catch (e) {
-        console.warn('Не удалось загрузить данные:', e);
-      }
-    }
-
-    function updateMainButton() {
-      if (isFormValid()) {
-        tg.MainButton.setText('Сгенерировать доверенность');
-        tg.MainButton.enable();
-      } else {
-        tg.MainButton.setText('Заполните все поля');
-        tg.MainButton.disable();
+        console.warn('Ошибка загрузки:', e);
       }
     }
 
     function sendData() {
-      if (!isFormValid()) {
-        tg.showAlert('Пожалуйста, заполните все поля!');
-        return;
+      const payload = getPayload();
+
+      for (const key of fields) {
+        if (!payload[key]) {
+          alert('Пожалуйста, заполните все поля!');
+          return;
+        }
       }
 
-      const payload = getPayload();
       saveForm();
-
-      tg.MainButton.showProgress(true);
-
       tg.sendData(JSON.stringify(payload));
-
-      setTimeout(() => tg.close(), 300);
+      setTimeout(() => tg.close(), 100);
     }
 
     for (const id of fields) {
-      const el = document.getElementById(id);
-      el.addEventListener('input', () => {
-        saveForm();
-        updateMainButton();
-      });
+      document.getElementById(id).addEventListener('input', saveForm);
     }
 
-    tg.MainButton.setParams({ color: tg.themeParams.button_color, text_color: tg.themeParams.button_text_color });
-    tg.MainButton.onClick(sendData);
-    tg.MainButton.show();
-
     loadForm();
-    updateMainButton();
   </script>
 </body>
 </html>
