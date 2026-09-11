@@ -12,7 +12,7 @@ logging.basicConfig(
 )
 
 BOT_TOKEN = "8965670570:AAEJYQvsnxrPRym6bGCIIc4URS7KXUnddwo"
-WEB_APP_URL = "https://gratamuragroup-sudo.github.io/tg-doc-webapp/?v=12"
+WEB_APP_URL = "https://gratamuragroup-sudo.github.io/tg-doc-webapp/?v=13"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     web_app_button = KeyboardButton(
